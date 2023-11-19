@@ -1,29 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "cornersList.h"
+#include "corner.h"
 
-#define INITIAL_BUFFER_SIZE 16
-
-CornersList *createCornersList()
+CornersList *createCornersList(uint16_t size)
 {
   CornersList *cornersList = (CornersList *)malloc(sizeof(CornersList));
-  cornersList->size = INITIAL_BUFFER_SIZE;
+  cornersList->size = size;
   cornersList->corners = (Corner *)malloc(sizeof(Corner) * cornersList->size);
   cornersList->numberOfCorners = 0;
   return cornersList;
 }
 
-CornersListResult addCorner(CornersList *cornersList, Corner corner)
+void addCorner(CornersList *cornersList, Corner corner)
 {
   if (cornersList->numberOfCorners == cornersList->size)
   {
-    return FAILURE_LIST_FULL;
+    return;
   }
 
   cornersList->corners[cornersList->numberOfCorners] = corner;
   cornersList->numberOfCorners++;
-  
-  return SUCCESS;
 }
 
 void freeCornersList(CornersList *cornersList)

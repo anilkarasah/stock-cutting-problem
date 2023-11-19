@@ -2,6 +2,7 @@
 #define ITEM_H
 
 #include <stdint.h>
+#include "corner.h"
 
 // Structure for items
 typedef struct
@@ -18,6 +19,7 @@ typedef struct
   uint8_t rollWidth;
   uint8_t rollHeight;
   Item *items;
+  CornersList *cornersList;
 } Data;
 
 // dataset related functions

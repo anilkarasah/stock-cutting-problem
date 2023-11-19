@@ -22,6 +22,8 @@ Data *initData(const char *filename)
 
   // allocate memory for items
   data->items = (Item *)malloc(sizeof(Item) * data->numItems);
+  
+  data->cornersList = createCornersList(data->numItems * 2);
 
   // read item data
   for (i = 0; i < data->numItems; i++)

@@ -4,8 +4,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "item.h"
+#include "corner.h"
 
 #define FILENAME_BUFFER_SIZE 64
+
+typedef enum {
+  SUCCESS = 0,
+  FAILURE = 1,
+} Result;
+
+Result addCorner(Data *data, Corner corner);
 
 int main(int argc, char *argv[])
 {
@@ -22,11 +30,20 @@ int main(int argc, char *argv[])
 
   data = initData(filename);
 
-  binPackingBFD(data);
-  
-  cuttingStockBL(data);
-
   freeData(data);
 
   return 0;
+}
+
+Result addCorner(Data *data, Corner corner)
+{
+  if (data->cornersList->numberOfCorners == data->cornersList->size)
+  {
+    return FAILURE;
+  }
+
+  data->cornersList->corners[data->cornersList->numberOfCorners] = corner;
+  data->cornersList->numberOfCorners++;
+  
+  return SUCCESS;
 }
