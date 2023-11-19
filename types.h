@@ -13,13 +13,13 @@ typedef struct
 {
   uint8_t x;
   uint8_t y;
+  bool isUsed;
 } Corner;
 
 typedef struct
 {
-  Corner *corners;
+  Corner **corners;
   uint16_t size;
-  uint16_t numberOfCorners;
 } CornersList;
 
 // Structure for items

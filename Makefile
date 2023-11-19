@@ -25,7 +25,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 # Rule to build object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(SRC_DIR)/types.h $(SRC_DIR)/corner.h $(SRC_DIR)/item.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
