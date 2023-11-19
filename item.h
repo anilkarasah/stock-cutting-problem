@@ -3,28 +3,14 @@
 
 #include <stdint.h>
 #include "corner.h"
-
-// Structure for items
-typedef struct
-{
-  uint8_t width;
-  uint8_t height;
-  uint8_t id;
-} Item;
-
-// Structure for data read from file
-typedef struct
-{
-  uint8_t numItems;
-  uint8_t rollWidth;
-  uint8_t rollHeight;
-  Item *items;
-  CornersList *cornersList;
-  uint8_t **roll;
-} Data;
+#include "types.h"
 
 // dataset related functions
 Data *initData(const char *filename);
 void freeData(Data *data);
+
+Result addCorner(Data *data, Corner corner);
+Result checkCornerPositionAvailable(Data *data, Corner corner);
+Result checkForCrashingItemInBetween(Data *data, uint8_t fromX, uint8_t fromY, uint8_t toX, uint8_t toY);
 
 #endif
