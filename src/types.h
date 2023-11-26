@@ -20,6 +20,7 @@ typedef struct
 {
   Corner **corners;
   uint16_t size;
+  uint16_t numCorners;
 } CornersList;
 
 // Structure for items

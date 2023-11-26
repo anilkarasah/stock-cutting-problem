@@ -2,28 +2,53 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "item.h"
 #include "corner.h"
 #include "types.h"
 
 Result addItem(Data *data, Item item);
 
+void printActiveCornersList(CornersList *cornersList);
+void printRoll(Data *data);
+void printSuccessRate(Data *data);
+
 int main(int argc, char *argv[])
 {
   Data *data;
+  bool haveToPrintCorner = false;
 
-  if (argc != 2)
+  if (argc >= 2)
   {
-    fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-    exit(-1);
+    data = initData(argv[1]);
+    if (argc == 3 && strcmp(argv[2], "-c") == 0)
+    {
+      haveToPrintCorner = true;
+    }
+  }
+  else
+  {
+    data = initData("/home/anilkarasah/cdtp/dataset/C2_1");
   }
 
-  data = initData(argv[1]);
-
+  Result iterationResult = SUCCESS;
   for (int i = 0; i < data->numItems; i++)
   {
-    addItem(data, data->items[i]);
+    Result iterationResult = addItem(data, data->items[i]);
+
+    if (haveToPrintCorner)
+    {
+      printActiveCornersList(data->cornersList);
+    }
+
+    if (iterationResult == FAILURE)
+    {
+      continue;
+    }
   }
+
+  printRoll(data);
+  printSuccessRate(data);
 
   freeData(data);
 
@@ -34,28 +59,103 @@ Result addItem(Data *data, Item item)
 {
   // find available corner
   uint8_t cornerIndex = findAvailableCorner(data->cornersList);
-  if (cornerIndex == UINT8_MAX)
+  if (cornerIndex >= data->cornersList->numCorners)
+  {
+    fprintf(stderr, "No available corner found\n");
     return FAILURE;
+  }
 
   // get the corner
   Corner *corner = data->cornersList->corners[cornerIndex];
 
   // check if the item can be placed at the corner
   if (corner->x + item.width > data->rollWidth || corner->y + item.height > data->rollHeight)
+  {
+    fprintf(stderr, "Item %d cannot be placed at (%d, %d) 1\n", item.id, corner->x, corner->y);
     return FAILURE;
+  }
+
+  Corner fromCorner, toCorner;
+
+  fromCorner = setCornerValues(fromCorner, corner->x, corner->y, false);
+  toCorner = setCornerValues(toCorner, corner->x + item.width, corner->y + item.height, false);
 
   // check if there is any item in between the corner and the item
-  Result checkForCrashingItemInBetweenResult = checkForCrashingItemInBetween(data, corner->x, corner->y, corner->x + item.width, corner->y + item.height);
+  Result checkForCrashingItemInBetweenResult = checkForCrashingItemInBetween(data, fromCorner, toCorner);
   if (checkForCrashingItemInBetweenResult == FAILURE)
+  {
+    fprintf(stderr, "Item %d cannot be placed at (%d, %d) 2\n", item.id, corner->x, corner->y);
     return FAILURE;
+  }
 
   // place the item
-  placeItemToTheCorner(data, item, corner);
+  placeItemToTheCorner(data, item, *corner);
 
   // mark the corner as used
   corner->isUsed = true;
 
+  // append new corners to the list
+  Corner *newCorner1 = initCorner(corner->x + item.width, corner->y, false);
+  Result checkCorner1PositionAvailableResult = checkCornerPositionAvailable(data, *newCorner1);
+  Corner *newCorner2 = initCorner(corner->x, corner->y + item.height, false);
+  Result checkCorner2PositionAvailableResult = checkCornerPositionAvailable(data, *newCorner2);
+
+  if (checkCorner1PositionAvailableResult == SUCCESS)
+  {
+    appendCornerToList(data->cornersList, newCorner1);
+  }
+
+  if (checkCorner2PositionAvailableResult == SUCCESS)
+  {
+    appendCornerToList(data->cornersList, newCorner2);
+  }
+
   printf("Item %d is placed at (%d, %d)\n", item.id, corner->x, corner->y);
 
   return SUCCESS;
+}
+
+void printActiveCornersList(CornersList *cornersList)
+{
+  printf("\tCorner list:\n\t");
+  for (int j = 0; j < cornersList->numCorners; j++)
+  {
+    if (!cornersList->corners[j]->isUsed)
+    {
+      printf("(%d, %d) ", cornersList->corners[j]->x, cornersList->corners[j]->y);
+    }
+  }
+  printf("\n");
+}
+
+void printRoll(Data *data)
+{
+  for (int i = 0; i < data->rollHeight; i++)
+  {
+    for (int j = 0; j < data->rollWidth; j++)
+    {
+      printf("%2d ", data->roll[i][j]);
+    }
+    printf("\n");
+  }
+}
+
+void printSuccessRate(Data *data)
+{
+  int filledCellCount = 0;
+
+  for (int i = 0; i < data->rollHeight; i++)
+  {
+    for (int j = 0; j < data->rollWidth; j++)
+    {
+      if (data->roll[i][j] != 0)
+      {
+        filledCellCount++;
+      }
+    }
+  }
+
+  float successRate = (float)filledCellCount / (data->rollWidth * data->rollHeight);
+
+  printf("Success rate is %.2f%%\n", successRate * 100);
 }

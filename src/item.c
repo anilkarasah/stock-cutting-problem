@@ -6,6 +6,11 @@
 Data *initData(const char *filename)
 {
   Data *data = (Data *)malloc(sizeof(Data));
+  if (data == NULL)
+  {
+    fprintf(stderr, "Error allocating memory for data\n");
+    exit(-1);
+  }
 
   // open file read stream
   FILE *fp;
@@ -25,6 +30,11 @@ Data *initData(const char *filename)
 
   // allocate memory for items
   data->items = (Item *)malloc(sizeof(Item) * data->numItems);
+  if (data->items == NULL)
+  {
+    fprintf(stderr, "Error allocating memory for data->items\n");
+    exit(-1);
+  }
 
   // read item data
   for (int i = 0; i < data->numItems; i++)
@@ -44,9 +54,20 @@ Data *initData(const char *filename)
 
   // initialize roll matrix
   data->roll = (uint8_t **)malloc(sizeof(uint8_t *) * data->rollHeight);
+  if (data->roll == NULL)
+  {
+    fprintf(stderr, "Error allocating memory for data->roll\n");
+    exit(-1);
+  }
+
   for (int i = 0; i < data->rollHeight; i++)
   {
     data->roll[i] = (uint8_t *)calloc(data->rollWidth, sizeof(uint8_t));
+    if (data->roll[i] == NULL)
+    {
+      fprintf(stderr, "Error allocating memory for data->roll[%d]\n", i);
+      exit(-1);
+    }
   }
 
   return data;
@@ -54,13 +75,18 @@ Data *initData(const char *filename)
 
 void freeData(Data *data)
 {
+  for (int i = 0; i < data->rollHeight; i++)
+  {
+    free(data->roll[i]);
+  }
+
   free(data->items);
   free(data);
 }
 
 Result addCorner(Data *data, Corner *corner)
 {
-  Result cornerPositionAvailableResult = checkCornerPositionAvailable(data, corner);
+  Result cornerPositionAvailableResult = checkCornerPositionAvailable(data, *corner);
 
   if (cornerPositionAvailableResult == FAILURE)
   {
@@ -72,103 +98,140 @@ Result addCorner(Data *data, Corner *corner)
   return appendCornerToListResult;
 }
 
-Result checkCornerPositionAvailable(Data *data, Corner *corner)
+Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
 {
-  int i = 0;
-
-  if (corner->x >= data->rollWidth || corner->y >= data->rollHeight)
+  if (appendingCorner.x >= data->rollWidth || appendingCorner.y >= data->rollHeight)
   {
     // out of bounds
+    fprintf(stderr, "Corner (%d, %d) is out of bounds\n", appendingCorner.x, appendingCorner.y);
     return FAILURE;
   }
 
-  if (data->roll[corner->x][corner->y] != 0)
+  if (data->roll[appendingCorner.y][appendingCorner.x] != 0)
   {
     // item exists in the position
+    fprintf(stderr, "Item exists in the position (%d, %d)\n", appendingCorner.x, appendingCorner.y);
     return FAILURE;
   }
 
-  while (i < data->cornersList->size && data->cornersList->corners[i] != NULL)
+  for (int i = 0; i < data->cornersList->numCorners; i++)
   {
+    Corner *currentCorner = data->cornersList->corners[i];
+
+    if (currentCorner->isUsed)
+      continue;
+
     // traverse through the hole corners list
     // check if corner already exists or, if corner is in the same x-axis or y-axis with any other corner
     // if they are in the same x-axis or y-axis, checks if they contain any item in between
 
-    if (data->cornersList->corners[i]->x == corner->x && data->cornersList->corners[i]->y == corner->y)
+    if (currentCorner->x == appendingCorner.x && currentCorner->y == appendingCorner.y)
     {
       // corner already exists
+      fprintf(stderr, "Corner (%d, %d) already exists\n", appendingCorner.x, appendingCorner.y);
       return FAILURE;
     }
 
-    if (data->cornersList->corners[i]->x == corner->x)
+    uint8_t fromX = appendingCorner.x;
+    uint8_t toX = appendingCorner.x;
+    uint8_t fromY = appendingCorner.y;
+    uint8_t toY = appendingCorner.y;
+
+    if (currentCorner->x == appendingCorner.x)
     {
       // corners are in the same y-axis
       // check if they contain any item in between
-      uint8_t fromY;
-      uint8_t toY;
 
-      if (data->cornersList->corners[i]->y > corner->y)
+      if (currentCorner->y > appendingCorner.y)
       {
-        fromY = corner->y;
-        toY = data->cornersList->corners[i]->y;
+        fromY = appendingCorner.y;
+        toY = currentCorner->y;
       }
       else
       {
-        fromY = data->cornersList->corners[i]->y;
-        toY = corner->y;
+        fromY = currentCorner->y;
+        toY = appendingCorner.y;
       }
-
-      Result yAxisAvailableResult = checkForCrashingItemInBetween(data, corner->x, fromY, corner->x, toY);
-
-      if (yAxisAvailableResult == FAILURE)
-        return FAILURE;
     }
-    else if (data->cornersList->corners[i]->y == corner->y)
+    else if (currentCorner->y == appendingCorner.y)
     {
       // corners are in the same x-axis
       // check if they contain any item in between
 
-      uint8_t fromX;
-      uint8_t toX;
-
-      if (data->cornersList->corners[i]->x > corner->x)
+      if (currentCorner->x > appendingCorner.x)
       {
-        fromX = corner->x;
-        toX = data->cornersList->corners[i]->x;
+        fromX = appendingCorner.x;
+        toX = currentCorner->x;
       }
       else
       {
-        fromX = data->cornersList->corners[i]->x;
-        toX = corner->x;
+        fromX = currentCorner->x;
+        toX = appendingCorner.x;
       }
-
-      Result xAxisAvailableResult = checkForCrashingItemInBetween(data, fromX, corner->y, toX, corner->y);
-
-      if (xAxisAvailableResult == FAILURE)
-        return FAILURE;
+    }
+    else
+    {
+      // corners are not in the same axis
+      continue;
     }
 
-    i++;
+    Corner fromCorner, toCorner;
+
+    fromCorner = setCornerValues(fromCorner, fromX, fromY, false);
+    toCorner = setCornerValues(toCorner, toX, toY, false);
+
+    Result cornerAvailableResult = checkForCrashingItemInBetween(data, fromCorner, toCorner);
+
+    if (cornerAvailableResult == FAILURE)
+    {
+      // there is an item in between
+      fprintf(stderr, "There is an item in between (%d, %d) and (%d, %d)\n", fromX, fromY, toX, toY);
+      return FAILURE;
+    }
+
+    // they are in the same axis and there is no item in between
+    // keep the lower positioned corner, and remove the higher positioned corner
+    if (currentCorner->x == appendingCorner.x)
+    {
+      if (currentCorner->y > appendingCorner.y)
+        // they are in the same x-axis and current corner is higher than appending corner
+        // this is an acceptable situation, but the other corner should not be used
+        currentCorner->isUsed = true;
+      else
+        // they are in the same x-axis and current corner is lower than appending corner
+        return FAILURE;
+    }
+    else if (currentCorner->y == appendingCorner.y)
+    {
+      if (currentCorner->x > appendingCorner.x)
+        // they are in the same y-axis and current corner is higher than appending corner
+        // this is an acceptable situation, but the other corner should not be used
+        currentCorner->isUsed = true;
+      else
+        // they are in the same y-axis and current corner is lower than appending corner
+        return FAILURE;
+    }
   }
 
+  // this corner can be placed
   return SUCCESS;
 }
 
-Result checkForCrashingItemInBetween(Data *data, uint8_t fromX, uint8_t fromY, uint8_t toX, uint8_t toY)
+Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCorner)
 {
-  if (fromX >= data->rollWidth || fromY >= data->rollHeight || toX >= data->rollWidth || toY >= data->rollHeight)
+  if (fromCorner.x > data->rollWidth || fromCorner.y > data->rollHeight || toCorner.x > data->rollWidth || toCorner.y > data->rollHeight)
   {
     // out of bounds
     return FAILURE;
   }
 
-  for (int i = fromX; i <= toX; i++)
+  for (int i = fromCorner.y; i < toCorner.y; i++)
   {
-    int j = fromY;
-    while (j <= toY && data->roll[i][j] == 0)
+    int j = fromCorner.x;
+    while (j < toCorner.x && data->roll[i][j] == 0)
       j++;
 
-    if (j <= toY)
+    if (j < toCorner.x)
     {
       // there is an item in between
       return FAILURE;
@@ -178,9 +241,9 @@ Result checkForCrashingItemInBetween(Data *data, uint8_t fromX, uint8_t fromY, u
   return SUCCESS;
 }
 
-void placeItemToTheCorner(Data *data, Item item, Corner *corner)
+void placeItemToTheCorner(Data *data, Item item, Corner corner)
 {
-  for (int i = corner->x; i < corner->x + item.width; i++)
-    for (int j = corner->y; j < corner->y + item.height; j++)
+  for (int i = corner.y; i < corner.y + item.height; i++)
+    for (int j = corner.x; j < corner.x + item.width; j++)
       data->roll[i][j] = item.id;
 }
