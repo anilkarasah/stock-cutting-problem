@@ -76,7 +76,7 @@ uint8_t findAvailableCorner(CornersList *cornersList)
   uint8_t minIndex = UINT8_MAX;
   Corner minCorner;
 
-  setCornerValues(minCorner, UINT8_MAX, UINT8_MAX, false);
+  minCorner = setCornerValues(minCorner, UINT8_MAX, UINT8_MAX, false);
 
   for (int i = 0; i < cornersList->numCorners; i++)
   {

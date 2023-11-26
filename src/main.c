@@ -11,44 +11,29 @@ Result addItem(Data *data, Item item);
 
 void printActiveCornersList(CornersList *cornersList);
 void printRoll(Data *data);
-void printSuccessRate(Data *data);
+float getSuccessRate(Data *data);
 
 int main(int argc, char *argv[])
 {
   Data *data;
-  bool haveToPrintCorner = false;
 
-  if (argc >= 2)
+  if (argc == 2)
   {
     data = initData(argv[1]);
-    if (argc == 3 && strcmp(argv[2], "-c") == 0)
-    {
-      haveToPrintCorner = true;
-    }
   }
   else
   {
-    data = initData("/home/anilkarasah/cdtp/dataset/C2_1");
+    data = initData("/home/anilkarasah/cdtp/dataset/C1_1");
   }
 
-  Result iterationResult = SUCCESS;
   for (int i = 0; i < data->numItems; i++)
   {
-    Result iterationResult = addItem(data, data->items[i]);
-
-    if (haveToPrintCorner)
-    {
-      printActiveCornersList(data->cornersList);
-    }
-
-    if (iterationResult == FAILURE)
-    {
-      continue;
-    }
+    addItem(data, data->items[i]);
   }
 
   printRoll(data);
-  printSuccessRate(data);
+  float successRate = getSuccessRate(data);
+  printf("Success rate is %.2f%%\n", successRate * 100);
 
   freeData(data);
 
@@ -140,7 +125,7 @@ void printRoll(Data *data)
   }
 }
 
-void printSuccessRate(Data *data)
+float getSuccessRate(Data *data)
 {
   int filledCellCount = 0;
 
@@ -157,5 +142,5 @@ void printSuccessRate(Data *data)
 
   float successRate = (float)filledCellCount / (data->rollWidth * data->rollHeight);
 
-  printf("Success rate is %.2f%%\n", successRate * 100);
+  return successRate;
 }
