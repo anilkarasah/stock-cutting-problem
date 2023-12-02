@@ -75,7 +75,7 @@ Result appendCornerToList(CornersList *cornersList, Corner *corner)
 }
 
 // find the index of a corner with the smallest y-axis, then smallest x-axis
-// because this application uses bottom-left heuristic algorithm
+// because this algorithm uses bottom-left heuristic approach
 uint8_t findAvailableCorner(CornersList *cornersList)
 {
   uint8_t minIndex = UINT8_MAX;
