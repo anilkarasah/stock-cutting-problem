@@ -185,8 +185,8 @@ Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
     if (cornerAvailableResult == FAILURE)
     {
       // there is an item in between
-      fprintf(stderr, "There is an item in between (%d, %d) and (%d, %d)\n", fromX, fromY, toX, toY);
-      return FAILURE;
+      // so, this corner CAN be placed!
+      return SUCCESS;
     }
 
     // they are in the same axis and there is no item in between
@@ -225,16 +225,43 @@ Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCor
     return FAILURE;
   }
 
-  for (int i = fromCorner.y; i < toCorner.y; i++)
+  if (fromCorner.x == toCorner.x)
   {
-    int j = fromCorner.x;
-    while (j < toCorner.x && data->roll[i][j] == 0)
-      j++;
+    int i = fromCorner.y;
+    while (i < toCorner.y && data->roll[i][fromCorner.x] == 0)
+      i++;
 
-    if (j < toCorner.x)
+    if (i < toCorner.y)
     {
       // there is an item in between
       return FAILURE;
+    }
+  }
+  else if (fromCorner.y == toCorner.y)
+  {
+    int i = fromCorner.x;
+    while (i < toCorner.x && data->roll[fromCorner.y][i] == 0)
+      i++;
+
+    if (i < toCorner.x)
+    {
+      // there is an item in between
+      return FAILURE;
+    }
+  }
+  else
+  {
+    for (int i = fromCorner.y; i < toCorner.y; i++)
+    {
+      int j = fromCorner.x;
+      while (j < toCorner.x && data->roll[i][j] == 0)
+        j++;
+
+      if (j < toCorner.x)
+      {
+        // there is an item in between
+        return FAILURE;
+      }
     }
   }
 

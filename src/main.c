@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < data->numItems; i++)
   {
     addItem(data, data->items[i]);
+    printActiveCornersList(data->cornersList);
   }
 
   printRoll(data);
