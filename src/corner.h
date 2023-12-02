@@ -9,7 +9,7 @@ CornersList *createCornersList(uint16_t size);
 void freeCornersList(CornersList *cornersList);
 
 Corner *initCorner(uint8_t x, uint8_t y, bool isUsed);
-Corner setCornerValues(Corner corner, uint8_t x, uint8_t y, bool isUsed);
+void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed);
 Result appendCornerToList(CornersList *cornersList, Corner *corner);
 
 // helper functions

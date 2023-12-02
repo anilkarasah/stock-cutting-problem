@@ -65,8 +65,8 @@ Result addItem(Data *data, Item item)
 
   Corner fromCorner, toCorner;
 
-  fromCorner = setCornerValues(fromCorner, corner->x, corner->y, false);
-  toCorner = setCornerValues(toCorner, corner->x + item.width, corner->y + item.height, false);
+  setCornerValues(&fromCorner, corner->x, corner->y, false);
+  setCornerValues(&toCorner, corner->x + item.width, corner->y + item.height, false);
 
   // check if there is any item in between the corner and the item
   Result checkForCrashingItemInBetweenResult = checkForCrashingItemInBetween(data, fromCorner, toCorner);
@@ -83,22 +83,22 @@ Result addItem(Data *data, Item item)
   corner->isUsed = true;
 
   // append new corners to the list
-  Corner *newCorner1 = initCorner(corner->x + item.width, corner->y, false);
-  Result checkCorner1PositionAvailableResult = checkCornerPositionAvailable(data, *newCorner1);
-  Corner *newCorner2 = initCorner(corner->x, corner->y + item.height, false);
-  Result checkCorner2PositionAvailableResult = checkCornerPositionAvailable(data, *newCorner2);
+  Corner *topRightCorner = initCorner(corner->x + item.width, corner->y, false);
+  Result checkCorner1PositionAvailableResult = checkCornerPositionAvailable(data, *topRightCorner);
+  Corner *bottomLeftCorner = initCorner(corner->x, corner->y + item.height, false);
+  Result checkCorner2PositionAvailableResult = checkCornerPositionAvailable(data, *bottomLeftCorner);
 
   if (checkCorner1PositionAvailableResult == SUCCESS)
   {
-    appendCornerToList(data->cornersList, newCorner1);
+    appendCornerToList(data->cornersList, topRightCorner);
   }
 
   if (checkCorner2PositionAvailableResult == SUCCESS)
   {
-    appendCornerToList(data->cornersList, newCorner2);
+    appendCornerToList(data->cornersList, bottomLeftCorner);
   }
 
-  printf("Item %d is placed at (%d, %d)\n", item.id, corner->x, corner->y);
+  printf("Item %d (%dx%d) is placed at (%d, %d)\n", item.id, item.width, item.height, corner->x, corner->y);
 
   return SUCCESS;
 }

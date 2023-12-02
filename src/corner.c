@@ -33,13 +33,11 @@ void freeCornersList(CornersList *cornersList)
   free(cornersList);
 }
 
-Corner setCornerValues(Corner corner, uint8_t x, uint8_t y, bool isUsed)
+void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed)
 {
-  corner.x = x;
-  corner.y = y;
-  corner.isUsed = isUsed;
-
-  return corner;
+  corner->x = x;
+  corner->y = y;
+  corner->isUsed = isUsed;
 }
 
 Corner *initCorner(uint8_t x, uint8_t y, bool isUsed)
@@ -76,7 +74,7 @@ uint8_t findAvailableCorner(CornersList *cornersList)
   uint8_t minIndex = UINT8_MAX;
   Corner minCorner;
 
-  minCorner = setCornerValues(minCorner, UINT8_MAX, UINT8_MAX, false);
+  setCornerValues(&minCorner, UINT8_MAX, UINT8_MAX, false);
 
   for (int i = 0; i < cornersList->numCorners; i++)
   {

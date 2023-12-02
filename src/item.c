@@ -177,8 +177,8 @@ Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
 
     Corner fromCorner, toCorner;
 
-    fromCorner = setCornerValues(fromCorner, fromX, fromY, false);
-    toCorner = setCornerValues(toCorner, toX, toY, false);
+    setCornerValues(&fromCorner, fromX, fromY, false);
+    setCornerValues(&toCorner, toX, toY, false);
 
     Result cornerAvailableResult = checkForCrashingItemInBetween(data, fromCorner, toCorner);
 
