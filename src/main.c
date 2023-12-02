@@ -12,7 +12,7 @@ void fixCorners(Data *data);
 
 void printActiveCornersList(CornersList *cornersList);
 void printRoll(Data *data);
-float getSuccessRate(Data *data);
+float calculateSuccessRate(Data *data);
 
 int main(int argc, char *argv[])
 {
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   printRoll(data);
 
   // print success rate
-  float successRate = getSuccessRate(data);
+  float successRate = calculateSuccessRate(data);
   printf("Success rate is %.2f%%\n", successRate * 100);
 
   freeData(data);
@@ -154,7 +154,7 @@ void printRoll(Data *data)
   }
 }
 
-float getSuccessRate(Data *data)
+float calculateSuccessRate(Data *data)
 {
   int filledCellCount = 0;
 
