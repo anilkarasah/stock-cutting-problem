@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// read data from file and initialize data structure
 Data *initData(const char *filename)
 {
   Data *data = (Data *)malloc(sizeof(Data));
@@ -73,8 +74,11 @@ Data *initData(const char *filename)
   return data;
 }
 
+// free all allocated memory
 void freeData(Data *data)
 {
+  freeCornersList(data->cornersList);
+
   for (int i = 0; i < data->rollHeight; i++)
   {
     free(data->roll[i]);
@@ -84,20 +88,22 @@ void freeData(Data *data)
   free(data);
 }
 
-Result addCorner(Data *data, Corner *corner)
+// check if the corner can be placed, if so, append it to the list
+Result checkAvailableThenAppendCorner(Data *data, Corner *corner)
 {
   Result cornerPositionAvailableResult = checkCornerPositionAvailable(data, *corner);
 
   if (cornerPositionAvailableResult == FAILURE)
   {
+    // corner cannot be placed
     return FAILURE;
   }
 
   Result appendCornerToListResult = appendCornerToList(data->cornersList, corner);
-
   return appendCornerToListResult;
 }
 
+// check if the corner can be placed to the roll matrix in the given position
 Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
 {
   if (appendingCorner.x >= data->rollWidth || appendingCorner.y >= data->rollHeight)
@@ -137,16 +143,18 @@ Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
   return SUCCESS;
 }
 
+// check if there is any item in between the two corners
 Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCorner)
 {
   if (fromCorner.x > data->rollWidth || fromCorner.y > data->rollHeight || toCorner.x > data->rollWidth || toCorner.y > data->rollHeight)
   {
-    // out of bounds
+    // out of bounds, cannot check
     return FAILURE;
   }
 
   if (fromCorner.x == toCorner.x)
   {
+    // same x-axis, only check if there is any item in between in the y-axis
     int i = fromCorner.y;
     while (i < toCorner.y && data->roll[i][fromCorner.x] == 0)
       i++;
@@ -159,6 +167,7 @@ Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCor
   }
   else if (fromCorner.y == toCorner.y)
   {
+    // same y-axis, only check if there is any item in between in the x-axis
     int i = fromCorner.x;
     while (i < toCorner.x && data->roll[fromCorner.y][i] == 0)
       i++;
@@ -171,6 +180,7 @@ Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCor
   }
   else
   {
+    // different x-axis and y-axis, check if there is any item in between the two corners
     for (int i = fromCorner.y; i < toCorner.y; i++)
     {
       int j = fromCorner.x;
@@ -188,6 +198,7 @@ Result checkForCrashingItemInBetween(Data *data, Corner fromCorner, Corner toCor
   return SUCCESS;
 }
 
+// fills roll matrix with item id
 void placeItemToTheCorner(Data *data, Item item, Corner corner)
 {
   for (int i = corner.y; i < corner.y + item.height; i++)

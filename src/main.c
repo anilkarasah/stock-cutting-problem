@@ -7,7 +7,7 @@
 #include "corner.h"
 #include "types.h"
 
-Result addItem(Data *data, Item item);
+Result processItem(Data *data, Item item);
 void fixCorners(Data *data);
 
 void printActiveCornersList(CornersList *cornersList);
@@ -20,21 +20,31 @@ int main(int argc, char *argv[])
 
   if (argc == 2)
   {
+    // filename is provided from terminal
     data = initData(argv[1]);
   }
   else
   {
+    // use default file
     data = initData("/home/anilkarasah/cdtp/dataset/C1_1");
   }
 
+  // process each item
   for (int i = 0; i < data->numItems; i++)
   {
-    addItem(data, data->items[i]);
+    processItem(data, data->items[i]);
+
+    // remove unappropriate corners
     fixCorners(data);
+
+    // (optional) print active corners list (corners that are not used yet)
     printActiveCornersList(data->cornersList);
   }
 
+  // print the final roll
   printRoll(data);
+
+  // print success rate
   float successRate = getSuccessRate(data);
   printf("Success rate is %.2f%%\n", successRate * 100);
 
@@ -43,7 +53,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-Result addItem(Data *data, Item item)
+Result processItem(Data *data, Item item)
 {
   // find available corner
   uint8_t cornerIndex = findAvailableCorner(data->cornersList);
@@ -64,7 +74,6 @@ Result addItem(Data *data, Item item)
   }
 
   Corner fromCorner, toCorner;
-
   setCornerValues(&fromCorner, corner->x, corner->y, false);
   setCornerValues(&toCorner, corner->x + item.width, corner->y + item.height, false);
 
@@ -82,21 +91,19 @@ Result addItem(Data *data, Item item)
   // mark the corner as used
   corner->isUsed = true;
 
-  // append new corners to the list
+  // create new corners
   Corner *topRightCorner = initCorner(corner->x + item.width, corner->y, false);
-  Result checkCorner1PositionAvailableResult = checkCornerPositionAvailable(data, *topRightCorner);
   Corner *bottomLeftCorner = initCorner(corner->x, corner->y + item.height, false);
-  Result checkCorner2PositionAvailableResult = checkCornerPositionAvailable(data, *bottomLeftCorner);
 
-  if (checkCorner1PositionAvailableResult == SUCCESS)
-  {
-    appendCornerToList(data->cornersList, topRightCorner);
-  }
+  // append new corners to the list
+  Result checkTopRightCornerPositionAvailableResult = checkAvailableThenAppendCorner(data, topRightCorner);
+  Result checkBottomLeftCornerPositionAvailableResult = checkAvailableThenAppendCorner(data, bottomLeftCorner);
 
-  if (checkCorner2PositionAvailableResult == SUCCESS)
-  {
-    appendCornerToList(data->cornersList, bottomLeftCorner);
-  }
+  if (checkTopRightCornerPositionAvailableResult == FAILURE)
+    free(topRightCorner);
+
+  if (checkBottomLeftCornerPositionAvailableResult == FAILURE)
+    free(bottomLeftCorner);
 
   printf("Item %d (%dx%d) is placed at (%d, %d)\n", item.id, item.width, item.height, corner->x, corner->y);
 
@@ -105,6 +112,8 @@ Result addItem(Data *data, Item item)
 
 void fixCorners(Data *data)
 {
+  // remove corners that are not used yet
+  // but, have an item in its position
   for (int i = 0; i < data->cornersList->numCorners; i++)
   {
     if (data->cornersList->corners[i]->isUsed)

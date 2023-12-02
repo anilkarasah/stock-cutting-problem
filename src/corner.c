@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "corner.h"
 
+// create a corners list with given size
 CornersList *createCornersList(uint16_t size)
 {
   CornersList *cornersList = (CornersList *)malloc(sizeof(CornersList));
@@ -27,12 +28,14 @@ CornersList *createCornersList(uint16_t size)
   return cornersList;
 }
 
+// free all allocated memory
 void freeCornersList(CornersList *cornersList)
 {
   free(cornersList->corners);
   free(cornersList);
 }
 
+// set corner values
 void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed)
 {
   corner->x = x;
@@ -40,6 +43,7 @@ void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed)
   corner->isUsed = isUsed;
 }
 
+// allocate memory for a corner and initialize it
 Corner *initCorner(uint8_t x, uint8_t y, bool isUsed)
 {
   Corner *corner = (Corner *)malloc(sizeof(Corner));
@@ -56,6 +60,7 @@ Corner *initCorner(uint8_t x, uint8_t y, bool isUsed)
   return corner;
 }
 
+// append a corner to the list if list is not full
 Result appendCornerToList(CornersList *cornersList, Corner *corner)
 {
   if (cornersList->numCorners >= cornersList->size)
@@ -69,6 +74,8 @@ Result appendCornerToList(CornersList *cornersList, Corner *corner)
   return SUCCESS;
 }
 
+// find the index of a corner with the smallest y-axis, then smallest x-axis
+// because this application uses bottom-left heuristic algorithm
 uint8_t findAvailableCorner(CornersList *cornersList)
 {
   uint8_t minIndex = UINT8_MAX;
