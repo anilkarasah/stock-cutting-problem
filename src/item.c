@@ -193,21 +193,13 @@ Result checkCornerPositionAvailable(Data *data, Corner appendingCorner)
     // keep the lower positioned corner, and remove the higher positioned corner
     if (currentCorner->x == appendingCorner.x)
     {
-      if (currentCorner->y > appendingCorner.y)
-        // they are in the same x-axis and current corner is higher than appending corner
-        // this is an acceptable situation, but the other corner should not be used
-        currentCorner->isUsed = true;
-      else
+      if (currentCorner->y <= appendingCorner.y)
         // they are in the same x-axis and current corner is lower than appending corner
         return FAILURE;
     }
     else if (currentCorner->y == appendingCorner.y)
     {
-      if (currentCorner->x > appendingCorner.x)
-        // they are in the same y-axis and current corner is higher than appending corner
-        // this is an acceptable situation, but the other corner should not be used
-        currentCorner->isUsed = true;
-      else
+      if (currentCorner->x <= appendingCorner.x)
         // they are in the same y-axis and current corner is lower than appending corner
         return FAILURE;
     }

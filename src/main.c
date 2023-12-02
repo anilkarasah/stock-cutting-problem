@@ -8,6 +8,7 @@
 #include "types.h"
 
 Result addItem(Data *data, Item item);
+void fixCorners(Data *data);
 
 void printActiveCornersList(CornersList *cornersList);
 void printRoll(Data *data);
@@ -29,6 +30,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < data->numItems; i++)
   {
     addItem(data, data->items[i]);
+    fixCorners(data);
     printActiveCornersList(data->cornersList);
   }
 
@@ -99,6 +101,23 @@ Result addItem(Data *data, Item item)
   printf("Item %d is placed at (%d, %d)\n", item.id, corner->x, corner->y);
 
   return SUCCESS;
+}
+
+void fixCorners(Data *data)
+{
+  for (int i = 0; i < data->cornersList->numCorners; i++)
+  {
+    if (data->cornersList->corners[i]->isUsed)
+      continue;
+
+    Corner *corner = data->cornersList->corners[i];
+
+    if (data->roll[corner->y][corner->x] != 0)
+    {
+      corner->isUsed = true;
+      continue;
+    }
+  }
 }
 
 void printActiveCornersList(CornersList *cornersList)
