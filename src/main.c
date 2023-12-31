@@ -6,6 +6,7 @@
 #include "item.h"
 #include "corner.h"
 #include "types.h"
+#include "edge.h"
 
 Result processItem(Data *data, Item item);
 void fixCorners(Data *data);
@@ -47,6 +48,11 @@ int main(int argc, char *argv[])
   // print success rate
   float successRate = calculateSuccessRate(data);
   printf("Success rate is %.2f%%\n", successRate * 100);
+
+  // calculate edge matrix
+  uint8_t **edgeMatrix = prepareEdgeMatrix(data);
+  calculateEdges(data, edgeMatrix);
+  printEdges(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
 
   freeData(data);
 
