@@ -51,10 +51,21 @@ int main(int argc, char *argv[])
 
   // calculate edge matrix
   uint8_t **edgeMatrix = prepareEdgeMatrix(data);
-  calculateEdges(data, edgeMatrix);
-  printEdges(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
+  processEdgeMatrix(data, edgeMatrix);
+  printEdgeMatrix(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
+  EdgeList edgeList = calculateEdgeList(data, edgeMatrix);
+  for (int i = 0; i < edgeList.numEdges; i++)
+  {
+    printf("Edge %3d: (%2d,%2d) -> (%2d,%2d)\n",
+           i + 1,
+           edgeList.edgeList[i].fromCorner.x,
+           edgeList.edgeList[i].fromCorner.y,
+           edgeList.edgeList[i].toCorner.x,
+           edgeList.edgeList[i].toCorner.y);
+  }
 
   freeData(data);
+  free(edgeList.edgeList);
 
   return 0;
 }

@@ -8,7 +8,8 @@
 #define EDGE_VALUE UINT8_MAX
 
 uint8_t **prepareEdgeMatrix(Data *data);
-void calculateEdges(Data *data, uint8_t **edgeMatrix);
-void printEdges(uint8_t **edgeMatrix, int width, int height);
+void processEdgeMatrix(Data *data, uint8_t **edgeMatrix);
+void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height);
+EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix);
 
 #endif

@@ -31,7 +31,7 @@ uint8_t **prepareEdgeMatrix(Data *data)
   return edgeMatrix;
 }
 
-void calculateEdges(Data *data, uint8_t **edgeMatrix)
+void processEdgeMatrix(Data *data, uint8_t **edgeMatrix)
 {
   int edgeMatrixWidth = EDGE_CELL(data->rollWidth);
   int edgeMatrixHeight = EDGE_CELL(data->rollHeight);
@@ -84,7 +84,7 @@ void calculateEdges(Data *data, uint8_t **edgeMatrix)
   }
 }
 
-void printEdges(uint8_t **edgeMatrix, int width, int height)
+void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height)
 {
   for (int i = 0; i < height; i++)
   {
@@ -97,4 +97,83 @@ void printEdges(uint8_t **edgeMatrix, int width, int height)
     }
     printf("\n");
   }
+}
+
+EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix)
+{
+  int edgeMatrixWidth = EDGE_CELL(data->rollWidth);
+  int edgeMatrixHeight = EDGE_CELL(data->rollHeight);
+
+  EdgeList edgeList;
+  edgeList.edgeList = (Edge *)calloc(data->numItems * 4, sizeof(Edge)); // maximum possible number of edges
+  int edgeListIndex = 0;
+
+  // calculate horizontal edges
+  for (int i = 0; i < edgeMatrixHeight; i++)
+  {
+    int j = 0;
+    while (j < edgeMatrixWidth)
+    {
+      if (edgeMatrix[i][j] != EDGE_VALUE)
+      {
+        j++;
+        continue;
+      }
+
+      int k = j + 1;
+      while (k < edgeMatrixWidth && edgeMatrix[i][k] == EDGE_VALUE)
+        k++;
+
+      // check if the range between J and K are either an edge
+      // to the end of row, or an edge in the middle of row
+      if ((k >= edgeMatrixWidth || edgeMatrix[i][k - 1] == EDGE_VALUE) && (j / 2 != k / 2))
+      {
+        // found a horizontal edge, add to edge list
+        Edge edge;
+        edge.fromCorner.x = j / 2;
+        edge.fromCorner.y = i / 2;
+        edge.toCorner.x = k / 2;
+        edge.toCorner.y = i / 2;
+        edgeList.edgeList[edgeListIndex] = edge;
+        edgeListIndex++;
+      }
+
+      j = k + 1;
+    }
+  }
+
+  // calculate vertical edges
+  for (int j = 0; j < edgeMatrixWidth; j++)
+  {
+    int i = 0;
+    while (i < edgeMatrixHeight)
+    {
+      if (edgeMatrix[i][j] != EDGE_VALUE)
+      {
+        i++;
+        continue;
+      }
+
+      int k = i + 1;
+      while (k < edgeMatrixHeight && edgeMatrix[k][j] == EDGE_VALUE)
+        k++;
+
+      if ((k >= edgeMatrixHeight || edgeMatrix[k - 1][j] == EDGE_VALUE) && (i / 2 != k / 2))
+      {
+        // found a vertical edge, add to edge list
+        Edge edge;
+        edge.fromCorner.x = j / 2;
+        edge.fromCorner.y = i / 2;
+        edge.toCorner.x = j / 2;
+        edge.toCorner.y = k / 2;
+        edgeList.edgeList[edgeListIndex] = edge;
+        edgeListIndex++;
+      }
+
+      i = k + 1;
+    }
+  }
+
+  edgeList.numEdges = edgeListIndex;
+  return edgeList;
 }

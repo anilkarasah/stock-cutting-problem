@@ -43,4 +43,17 @@ typedef struct
   uint8_t **roll;
 } Data;
 
+// Structure for edges
+typedef struct
+{
+  Corner fromCorner;
+  Corner toCorner;
+} Edge;
+
+typedef struct
+{
+  Edge *edgeList;
+  uint16_t numEdges;
+} EdgeList;
+
 #endif
