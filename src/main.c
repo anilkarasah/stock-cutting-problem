@@ -44,29 +44,25 @@ int main(int argc, char *argv[])
   }
 
   // print the final roll
-  printRoll(data);
+  // printRoll(data);
 
   // print success rate
-  float successRate = calculateSuccessRate(data);
-  printf("Success rate is %.2f%%\n", successRate * 100);
+  // float successRate = calculateSuccessRate(data);
+  // printf("Success rate is %.2f%%\n", successRate * 100);
 
   // calculate edge matrix
   uint8_t **edgeMatrix = prepareEdgeMatrix(data);
   processEdgeMatrix(data, edgeMatrix);
-  printEdgeMatrix(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
+  // printEdgeMatrix2(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
 
-  EdgeList *edgeList = calculateEdgeList(data, edgeMatrix);
-  for (int i = 0; i < edgeList->numEdges; i++)
-  {
-    printf("Edge %3d: (%2d,%2d) -> (%2d,%2d)\n",
-           i + 1,
-           edgeList->edgeList[i].fromCorner.x,
-           edgeList->edgeList[i].fromCorner.y,
-           edgeList->edgeList[i].toCorner.x,
-           edgeList->edgeList[i].toCorner.y);
-  }
+  EdgeList *cornerAndEdgeList = (EdgeList *)malloc(sizeof(EdgeList));
+  cornerAndEdgeList->numEdges = 0;
+  cornerAndEdgeList->edgeList = (Edge *)malloc(data->numItems * 4 * sizeof(Edge));
+  Corner fromCorner = {0, 0, false, 0};
+  Corner currentCorner = {0, 0, false, 0};
+  calculateVertexAndEdgeList(data, cornerAndEdgeList, edgeMatrix, fromCorner, currentCorner);
+  CornersList *vertexList = calculateVertexList(data, cornerAndEdgeList);
 
-  CornersList *vertexList = calculateVertexList(data, edgeMatrix, edgeList);
   for (int i = 0; i < vertexList->numCorners; i++)
   {
     printf("Vertex %2d: (%2d,%2d)\n",
@@ -75,38 +71,11 @@ int main(int argc, char *argv[])
            vertexList->corners[i]->y);
   }
 
-  // TODO connect each corner using edge matrix, into a EdgeList structure
-
   // calculate optimal graph traverse for Gcode
-  uint8_t **adjacencyMatrix = generateAdjacencyMatrix(vertexList, edgeList, data->rollWidth);
-
-  // print adjacency matrix
-  printf("Adjacency matrix:\n%4s", "");
-  for (int i = 0; i < vertexList->numCorners; i++)
-  {
-    printf("%3d", i);
-  }
-
-  printf("\n");
-  for (int i = 0; i < vertexList->numCorners; i++)
-  {
-    printf("%3d", i);
-    for (int j = 0; j < vertexList->numCorners; j++)
-    {
-      printf("%3d", adjacencyMatrix[i][j]);
-    }
-    printf("\n");
-  }
+  uint8_t **adjacencyMatrix = generateAdjacencyMatrix(vertexList, cornerAndEdgeList);
 
   bool *visited = (bool *)calloc(vertexList->numCorners, sizeof(bool));
   dfsTraverse(adjacencyMatrix, vertexList, data->rollWidth, 0, 0, visited);
-
-  // free allocated memory
-  freeData(data);
-  free(edgeList->edgeList);
-  free(edgeList);
-  free(vertexList->corners);
-  free(vertexList);
 
   return 0;
 }

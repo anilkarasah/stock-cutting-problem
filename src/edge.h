@@ -14,7 +14,6 @@ void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height);
 void printEdgeMatrix2(uint8_t **edgeMatrix, int width, int height);
 
 // edge list related functions
-EdgeList *calculateEdgeList(Data *data, uint8_t **edgeMatrix);
-CornersList *calculateVertexList(Data *data, uint8_t **edgeMatrix, EdgeList *edgeList);
+CornersList *calculateVertexList(Data *data, EdgeList *edgeList);
 
 #endif
