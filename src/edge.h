@@ -11,9 +11,10 @@
 uint8_t **prepareEdgeMatrix(Data *data);
 void processEdgeMatrix(Data *data, uint8_t **edgeMatrix);
 void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height);
+void printEdgeMatrix2(uint8_t **edgeMatrix, int width, int height);
 
 // edge list related functions
 EdgeList *calculateEdgeList(Data *data, uint8_t **edgeMatrix);
-CornersList *calculateUniqueCorners(EdgeList *edgeList, int rollWidth);
+CornersList *calculateVertexList(Data *data, uint8_t **edgeMatrix, EdgeList *edgeList);
 
 #endif

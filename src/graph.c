@@ -10,62 +10,6 @@ uint16_t calculateDistance(uint8_t fromX, uint8_t fromY, uint8_t toX, uint8_t to
   return distanceX * distanceX + distanceY * distanceY;
 }
 
-int compareCorner(const void *corner1, const void *corner2)
-{
-  return ((Corner *)corner1)->hash - ((Corner *)corner2)->hash;
-}
-
-CornersList *calculateUniqueCorners(EdgeList *edgeList, int rollWidth)
-{
-  Corner *uniqueCorners = (Corner *)calloc(edgeList->numEdges * 2, sizeof(Corner));
-  int uniqueCornersIndex = 0;
-
-  for (int i = 0; i < edgeList->numEdges; i++)
-  {
-    Edge edge = edgeList->edgeList[i];
-
-    bool fromCornerExists = false;
-    bool toCornerExists = false;
-
-    for (int k = 0; k < uniqueCornersIndex; k++)
-    {
-      if (compareCorners(edge.fromCorner, uniqueCorners[k]))
-        fromCornerExists = true;
-
-      if (compareCorners(edge.toCorner, uniqueCorners[k]))
-        toCornerExists = true;
-    }
-
-    if (!fromCornerExists)
-    {
-      setCornerValues(&(uniqueCorners[uniqueCornersIndex]), edge.fromCorner.x, edge.fromCorner.y, false, rollWidth);
-      uniqueCornersIndex++;
-    }
-
-    if (!toCornerExists)
-    {
-      setCornerValues(&(uniqueCorners[uniqueCornersIndex]), edge.toCorner.x, edge.toCorner.y, false, rollWidth);
-      uniqueCornersIndex++;
-    }
-  }
-
-  qsort(uniqueCorners, uniqueCornersIndex, sizeof(Corner), compareCorner);
-
-  CornersList *cornersList = (CornersList *)malloc(sizeof(CornersList));
-  cornersList->numCorners = uniqueCornersIndex;
-  cornersList->corners = (Corner **)malloc(uniqueCornersIndex * sizeof(Corner *));
-  for (int i = 0; i < cornersList->numCorners; i++)
-  {
-    cornersList->corners[i] = (Corner *)calloc(1, sizeof(Corner));
-    cornersList->corners[i]->x = uniqueCorners[i].x;
-    cornersList->corners[i]->y = uniqueCorners[i].y;
-    cornersList->corners[i]->isUsed = false;
-    cornersList->corners[i]->hash = getCornerHash(*cornersList->corners[i], rollWidth);
-  }
-
-  return cornersList;
-}
-
 int searchCorner(CornersList *cornersList, Corner corner)
 {
   // binary search
@@ -88,27 +32,44 @@ int searchCorner(CornersList *cornersList, Corner corner)
   return -1;
 }
 
-uint8_t **generateAdjacencyMatrix(CornersList *cornersList, EdgeList *edgeList, int rollWidth)
+uint8_t **generateAdjacencyMatrix(CornersList *vertexList, EdgeList *edgeList, int rollWidth)
 {
-  uint8_t **adjacencyMatrix = (uint8_t **)calloc(cornersList->numCorners, sizeof(uint8_t *));
-  for (int i = 0; i < cornersList->numCorners; i++)
+  uint8_t **adjacencyMatrix = (uint8_t **)calloc(vertexList->numCorners, sizeof(uint8_t *));
+  for (int i = 0; i < vertexList->numCorners; i++)
   {
-    adjacencyMatrix[i] = (uint8_t *)calloc(cornersList->numCorners, sizeof(uint8_t));
+    adjacencyMatrix[i] = (uint8_t *)calloc(vertexList->numCorners, sizeof(uint8_t));
   }
 
-  for (int i = 0; i < edgeList->numEdges; i++)
+  for (int i = 0; i < vertexList->numCorners; i++)
   {
-    Edge edge = edgeList->edgeList[i];
+    Corner *corner = vertexList->corners[i];
 
-    edge.fromCorner.hash = getCornerHash(edge.fromCorner, rollWidth);
-    edge.toCorner.hash = getCornerHash(edge.toCorner, rollWidth);
-
-    int fromCornerIndex = searchCorner(cornersList, edge.fromCorner);
-    int toCornerIndex = searchCorner(cornersList, edge.toCorner);
+    int fromCornerIndex = searchCorner(vertexList, edge.fromCorner);
+    int toCornerIndex = searchCorner(vertexList, edge.toCorner);
 
     adjacencyMatrix[fromCornerIndex][toCornerIndex] = 1;
     adjacencyMatrix[toCornerIndex][fromCornerIndex] = 1;
   }
 
   return adjacencyMatrix;
+}
+
+void dfsTraverse(uint8_t **adjacencyMatrix, CornersList *cornersList, int rollWidth, int x, int y, bool *visited)
+{
+  Corner corner = {x, y, false, 0};
+  corner.hash = getCornerHash(corner, rollWidth);
+  int cornerIndex = searchCorner(cornersList, corner);
+  if (cornerIndex == -1)
+    return;
+
+  visited[cornerIndex] = true;
+
+  for (int i = 0; i < cornersList->numCorners; i++)
+  {
+    if (adjacencyMatrix[cornerIndex][i] == 1 && !visited[i])
+    {
+      printf("(%d, %d) -> (%d, %d)\n", cornersList->corners[cornerIndex]->x, cornersList->corners[cornerIndex]->y, cornersList->corners[i]->x, cornersList->corners[i]->y);
+      dfsTraverse(adjacencyMatrix, cornersList, rollWidth, cornersList->corners[i]->x, cornersList->corners[i]->y, visited);
+    }
+  }
 }

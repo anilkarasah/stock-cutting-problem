@@ -100,6 +100,28 @@ void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height)
   }
 }
 
+void printEdgeMatrix2(uint8_t **edgeMatrix, int width, int height)
+{
+  printf("%4s", "");
+  for (int i = 0; i < width; i++)
+  {
+    printf("%3d", i);
+  }
+
+  for (int i = 0; i < height; i++)
+  {
+    printf("\n%2d: ", i);
+    for (int j = 0; j < width; j++)
+    {
+      if (edgeMatrix[i][j] == EDGE_VALUE)
+        printf("<#>");
+      else
+        printf("   ");
+    }
+  }
+  printf("\n");
+}
+
 EdgeList *initEdgeList(int edgeListSize)
 {
   EdgeList *edgeList = (EdgeList *)malloc(sizeof(EdgeList));
@@ -185,4 +207,104 @@ EdgeList *calculateEdgeList(Data *data, uint8_t **edgeMatrix)
 
   edgeList->numEdges = edgeListIndex;
   return edgeList;
+}
+
+bool checkVertex(uint8_t **edgeMatrix, int x, int y, int edgeMatrixWidth, int edgeMatrixHeight)
+{
+  if (edgeMatrix[y][x] != EDGE_VALUE)
+    return false;
+
+  // check corner of the edge matrix
+  if ((x == 0 || x == edgeMatrixWidth - 1) && (y == 0 || y == edgeMatrixHeight - 1))
+    return true;
+
+  // top or bottom edge
+  if ((y == 0 && edgeMatrix[y + 1][x] == EDGE_VALUE) || (y == edgeMatrixHeight - 1 && edgeMatrix[y - 1][x] == EDGE_VALUE))
+    return true;
+
+  // out of boundaries
+  if (y <= 0 || y >= edgeMatrixHeight - 1)
+    return false;
+
+  bool hasHorizontalEdge = edgeMatrix[y][x - 1] == EDGE_VALUE || edgeMatrix[y][x + 1] == EDGE_VALUE;
+  bool hasVerticalEdge = edgeMatrix[y - 1][x] == EDGE_VALUE || edgeMatrix[y + 1][x] == EDGE_VALUE;
+
+  // check if there is any edge in the 4 directions
+  if (hasHorizontalEdge && hasVerticalEdge)
+    return true;
+
+  return false;
+}
+
+bool checkVertexAlreadyExist(CornersList *vertexList, int x, int y)
+{
+  for (int i = 0; i < vertexList->numCorners; i++)
+  {
+    if (vertexList->corners[i]->x == x && vertexList->corners[i]->y == y)
+      return true;
+  }
+
+  return false;
+}
+
+int compareCorner(const void *corner1, const void *corner2)
+{
+  return ((Corner *)corner1)->hash - ((Corner *)corner2)->hash;
+}
+
+CornersList *calculateVertexList(Data *data, uint8_t **edgeMatrix, EdgeList *edgeList)
+{
+  int edgeMatrixWidth = EDGE_CELL(data->rollWidth);
+  int edgeMatrixHeight = EDGE_CELL(data->rollHeight);
+
+  int vertexListSize = edgeList->numEdges * 4;
+  CornersList *vertexList = (CornersList *)malloc(sizeof(CornersList));
+  vertexList->numCorners = 0;
+  vertexList->corners = (Corner **)malloc(vertexListSize * sizeof(Corner *));
+  for (int i = 0; i < vertexListSize; i++)
+  {
+    vertexList->corners[i] = (Corner *)malloc(sizeof(Corner));
+  }
+
+  int vertexListIndex = 0;
+
+  // traverse all edges
+  for (int i = 0; i < edgeList->numEdges; i++)
+  {
+    Edge currentEdge = edgeList->edgeList[i];
+
+    if (currentEdge.fromCorner.y != currentEdge.toCorner.y)
+      break;
+
+    int fromX = EDGE_CELL(currentEdge.fromCorner.x) - 1;
+    int toX = EDGE_CELL(currentEdge.toCorner.x) - 1;
+
+    int y = EDGE_CELL(currentEdge.fromCorner.y) - 1;
+
+    for (int j = fromX; j <= toX; j++)
+    {
+      if (checkVertexAlreadyExist(vertexList, j / 2, currentEdge.fromCorner.y))
+        continue;
+
+      if (!checkVertex(edgeMatrix, j, y, edgeMatrixWidth, edgeMatrixHeight))
+        continue;
+
+      Corner *corner = (Corner *)malloc(sizeof(Corner));
+      corner->x = j / 2;
+      corner->y = currentEdge.fromCorner.y;
+      corner->hash = getCornerHash(*corner, data->rollWidth);
+
+      printf("Vertex %2d: (%2d,%2d)\n", vertexListIndex, corner->x, corner->y);
+
+      // add corner to vertex list
+      setCornerValues(vertexList->corners[vertexListIndex], corner->x, corner->y, false, data->rollWidth);
+      vertexListIndex++;
+    }
+  }
+
+  // sort by X, then Y
+  qsort(vertexList, vertexListIndex, sizeof(Corner), compareCorner);
+
+  vertexList->numCorners = vertexListIndex;
+  return vertexList;
 }
