@@ -7,6 +7,7 @@
 #include "corner.h"
 #include "types.h"
 #include "edge.h"
+#include "graph.h"
 
 Result processItem(Data *data, Item item);
 void fixCorners(Data *data);
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
     fixCorners(data);
 
     // (optional) print active corners list (corners that are not used yet)
-    printActiveCornersList(data->cornersList);
+    // printActiveCornersList(data->cornersList);
   }
 
   // print the final roll
@@ -53,19 +54,26 @@ int main(int argc, char *argv[])
   uint8_t **edgeMatrix = prepareEdgeMatrix(data);
   processEdgeMatrix(data, edgeMatrix);
   printEdgeMatrix(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
-  EdgeList edgeList = calculateEdgeList(data, edgeMatrix);
-  for (int i = 0; i < edgeList.numEdges; i++)
+  EdgeList *edgeList = calculateEdgeList(data, edgeMatrix);
+  for (int i = 0; i < edgeList->numEdges; i++)
   {
     printf("Edge %3d: (%2d,%2d) -> (%2d,%2d)\n",
            i + 1,
-           edgeList.edgeList[i].fromCorner.x,
-           edgeList.edgeList[i].fromCorner.y,
-           edgeList.edgeList[i].toCorner.x,
-           edgeList.edgeList[i].toCorner.y);
+           edgeList->edgeList[i].fromCorner.x,
+           edgeList->edgeList[i].fromCorner.y,
+           edgeList->edgeList[i].toCorner.x,
+           edgeList->edgeList[i].toCorner.y);
   }
 
+  // calculate optimal graph traverse for Gcode
+  CornersList *uniqueCornersList = calculateUniqueCorners(edgeList, data->rollWidth);
+  uint8_t **adjacencyMatrix = generateAdjacencyMatrix(uniqueCornersList, edgeList, data->rollWidth);
+
+  // free allocated memory
   freeData(data);
-  free(edgeList.edgeList);
+  free(edgeList->edgeList);
+  free(edgeList);
+  free(uniqueCornersList);
 
   return 0;
 }
@@ -91,8 +99,8 @@ Result processItem(Data *data, Item item)
   }
 
   Corner fromCorner, toCorner;
-  setCornerValues(&fromCorner, corner->x, corner->y, false);
-  setCornerValues(&toCorner, corner->x + item.width, corner->y + item.height, false);
+  setCornerValues(&fromCorner, corner->x, corner->y, false, data->rollWidth);
+  setCornerValues(&toCorner, corner->x + item.width, corner->y + item.height, false, data->rollWidth);
 
   // check if there is any item in between the corner and the item
   Result checkForCrashingItemInBetweenResult = checkForCrashingItemInBetween(data, fromCorner, toCorner);
@@ -109,8 +117,8 @@ Result processItem(Data *data, Item item)
   corner->isUsed = true;
 
   // create new corners
-  Corner *topRightCorner = initCorner(corner->x + item.width, corner->y, false);
-  Corner *bottomLeftCorner = initCorner(corner->x, corner->y + item.height, false);
+  Corner *topRightCorner = initCorner(corner->x + item.width, corner->y, false, data->rollWidth);
+  Corner *bottomLeftCorner = initCorner(corner->x, corner->y + item.height, false, data->rollWidth);
 
   // append new corners to the list
   Result checkTopRightCornerPositionAvailableResult = checkAvailableThenAppendCorner(data, topRightCorner);

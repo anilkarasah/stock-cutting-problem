@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "corner.h"
 
 uint8_t **prepareEdgeMatrix(Data *data)
 {
@@ -99,13 +100,21 @@ void printEdgeMatrix(uint8_t **edgeMatrix, int width, int height)
   }
 }
 
-EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix)
+EdgeList *initEdgeList(int edgeListSize)
+{
+  EdgeList *edgeList = (EdgeList *)malloc(sizeof(EdgeList));
+  edgeList->edgeList = (Edge *)calloc(edgeListSize, sizeof(Edge));
+  edgeList->numEdges = 0;
+
+  return edgeList;
+}
+
+EdgeList *calculateEdgeList(Data *data, uint8_t **edgeMatrix)
 {
   int edgeMatrixWidth = EDGE_CELL(data->rollWidth);
   int edgeMatrixHeight = EDGE_CELL(data->rollHeight);
 
-  EdgeList edgeList;
-  edgeList.edgeList = (Edge *)calloc(data->numItems * 4, sizeof(Edge)); // maximum possible number of edges
+  EdgeList *edgeList = initEdgeList(data->numItems * 4); // maximum possible number of edges
   int edgeListIndex = 0;
 
   // calculate horizontal edges
@@ -134,7 +143,7 @@ EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix)
         edge.fromCorner.y = i / 2;
         edge.toCorner.x = k / 2;
         edge.toCorner.y = i / 2;
-        edgeList.edgeList[edgeListIndex] = edge;
+        edgeList->edgeList[edgeListIndex] = edge;
         edgeListIndex++;
       }
 
@@ -166,7 +175,7 @@ EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix)
         edge.fromCorner.y = i / 2;
         edge.toCorner.x = j / 2;
         edge.toCorner.y = k / 2;
-        edgeList.edgeList[edgeListIndex] = edge;
+        edgeList->edgeList[edgeListIndex] = edge;
         edgeListIndex++;
       }
 
@@ -174,6 +183,6 @@ EdgeList calculateEdgeList(Data *data, uint8_t **edgeMatrix)
     }
   }
 
-  edgeList.numEdges = edgeListIndex;
+  edgeList->numEdges = edgeListIndex;
   return edgeList;
 }

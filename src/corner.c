@@ -22,7 +22,7 @@ CornersList *createCornersList(uint16_t size)
   }
 
   // initialize the first corner at (0, 0)
-  cornersList->corners[0] = initCorner(0, 0, false);
+  cornersList->corners[0] = initCorner(0, 0, false, size);
   cornersList->numCorners = 1;
 
   return cornersList;
@@ -36,15 +36,16 @@ void freeCornersList(CornersList *cornersList)
 }
 
 // set corner values
-void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed)
+void setCornerValues(Corner *corner, uint8_t x, uint8_t y, bool isUsed, int rollWidth)
 {
   corner->x = x;
   corner->y = y;
   corner->isUsed = isUsed;
+  corner->hash = getCornerHash(*corner, rollWidth);
 }
 
 // allocate memory for a corner and initialize it
-Corner *initCorner(uint8_t x, uint8_t y, bool isUsed)
+Corner *initCorner(uint8_t x, uint8_t y, bool isUsed, int rollWidth)
 {
   Corner *corner = (Corner *)malloc(sizeof(Corner));
   if (corner == NULL)
@@ -56,6 +57,7 @@ Corner *initCorner(uint8_t x, uint8_t y, bool isUsed)
   corner->x = x;
   corner->y = y;
   corner->isUsed = isUsed;
+  corner->hash = getCornerHash(*corner, rollWidth);
 
   return corner;
 }
@@ -81,7 +83,7 @@ uint8_t findAvailableCorner(CornersList *cornersList)
   uint8_t minIndex = UINT8_MAX;
   Corner minCorner;
 
-  setCornerValues(&minCorner, UINT8_MAX, UINT8_MAX, false);
+  setCornerValues(&minCorner, UINT8_MAX, UINT8_MAX, false, cornersList->size);
 
   for (int i = 0; i < cornersList->numCorners; i++)
   {
@@ -103,4 +105,14 @@ uint8_t findAvailableCorner(CornersList *cornersList)
   }
 
   return minIndex;
+}
+
+bool compareCorners(Corner corner1, Corner corner2)
+{
+  return corner1.x == corner2.x && corner1.y == corner2.y;
+}
+
+uint16_t getCornerHash(Corner corner, int rollWidth)
+{
+  return corner.x * (rollWidth + 1) + corner.y;
 }

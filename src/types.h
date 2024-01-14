@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -15,6 +16,7 @@ typedef struct
   uint8_t x;
   uint8_t y;
   bool isUsed;
+  uint16_t hash;
 } Corner;
 
 typedef struct
@@ -48,6 +50,7 @@ typedef struct
 {
   Corner fromCorner;
   Corner toCorner;
+  bool isUsed;
 } Edge;
 
 typedef struct
