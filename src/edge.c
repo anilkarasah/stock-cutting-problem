@@ -105,7 +105,7 @@ void printEdgeMatrix2(uint8_t **edgeMatrix, int width, int height)
   printf("%4s", "");
   for (int i = 0; i < width; i++)
   {
-    printf("%3d", i);
+    printf("%2d", i);
   }
 
   for (int i = 0; i < height; i++)
@@ -114,9 +114,9 @@ void printEdgeMatrix2(uint8_t **edgeMatrix, int width, int height)
     for (int j = 0; j < width; j++)
     {
       if (edgeMatrix[i][j] == EDGE_VALUE)
-        printf("<#>");
+        printf("<>");
       else
-        printf("   ");
+        printf("  ");
     }
   }
   printf("\n");

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 #include "item.h"
 #include "corner.h"
 #include "types.h"
@@ -15,6 +16,8 @@ void fixCorners(Data *data);
 void printActiveCornersList(CornersList *cornersList);
 void printRoll(Data *data);
 float calculateSuccessRate(Data *data);
+
+void generateGcode(EdgeList *edgeList);
 
 int main(int argc, char *argv[])
 {
@@ -53,7 +56,7 @@ int main(int argc, char *argv[])
   // calculate edge matrix
   uint8_t **edgeMatrix = prepareEdgeMatrix(data);
   processEdgeMatrix(data, edgeMatrix);
-  // printEdgeMatrix2(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
+  printEdgeMatrix2(edgeMatrix, EDGE_CELL(data->rollWidth), EDGE_CELL(data->rollHeight));
 
   EdgeList *cornerAndEdgeList = (EdgeList *)malloc(sizeof(EdgeList));
   cornerAndEdgeList->numEdges = 0;
@@ -62,6 +65,8 @@ int main(int argc, char *argv[])
   Corner currentCorner = {0, 0, false, 0};
   calculateVertexAndEdgeList(data, cornerAndEdgeList, edgeMatrix, fromCorner, currentCorner);
   CornersList *vertexList = calculateVertexList(data, cornerAndEdgeList);
+
+  generateGcode(cornerAndEdgeList);
 
   for (int i = 0; i < vertexList->numCorners; i++)
   {
@@ -73,6 +78,24 @@ int main(int argc, char *argv[])
 
   // calculate optimal graph traverse for Gcode
   uint8_t **adjacencyMatrix = generateAdjacencyMatrix(vertexList, cornerAndEdgeList);
+
+  printf("%3s", "");
+  for (int i = 0; i < vertexList->numCorners; i++)
+  {
+    printf("%3d", i + 1);
+  }
+
+  printf("\n");
+
+  for (int i = 0; i < vertexList->numCorners; i++)
+  {
+    printf("%3d", i + 1);
+    for (int j = 0; j < vertexList->numCorners; j++)
+    {
+      printf("%3s", adjacencyMatrix[i][j] ? "#" : "");
+    }
+    printf("\n");
+  }
 
   bool *visited = (bool *)calloc(vertexList->numCorners, sizeof(bool));
   dfsTraverse(adjacencyMatrix, vertexList, data->rollWidth, 0, 0, visited);
@@ -199,4 +222,39 @@ float calculateSuccessRate(Data *data)
   float successRate = (float)filledCellCount / (data->rollWidth * data->rollHeight);
 
   return successRate;
+}
+
+void generateGcode(EdgeList *edgeList)
+{
+  FILE *fp;
+
+  if ((fp = fopen("out.gcode", "w")) == NULL)
+  {
+    printf("Error! opening file");
+    exit(1);
+  }
+
+  fprintf(fp, "G90\n");
+  fprintf(fp, "G21\n");
+  fprintf(fp, "G1 F1000\n");
+
+  for (int i = 0; i < edgeList->numEdges; i++)
+  {
+    Edge current = edgeList->edgeList[i];
+
+    if (i > 0 && (current.fromCorner.x != edgeList->edgeList[i - 1].toCorner.x || current.fromCorner.y != edgeList->edgeList[i - 1].toCorner.y))
+    {
+      // start writing mode by decreasing z (aka. pen down)
+      fprintf(fp, "G1 Z0\n");
+    }
+
+    fprintf(fp, "G1 X%d Y%d\n", current.fromCorner.x, current.fromCorner.y);
+    fprintf(fp, "G1 X%d Y%d\n", current.toCorner.x, current.toCorner.y);
+
+    if (i < edgeList->numEdges - 1 && (current.toCorner.x != edgeList->edgeList[i + 1].fromCorner.x || current.toCorner.y != edgeList->edgeList[i + 1].fromCorner.y))
+    {
+      // end writing mode by increasing z (aka. pen up)
+      fprintf(fp, "G1 Z1\n");
+    }
+  }
 }
