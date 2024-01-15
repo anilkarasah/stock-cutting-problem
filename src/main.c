@@ -10,6 +10,8 @@
 #include "edge.h"
 #include "graph.h"
 
+#define DISTANCE_UNIT 5
+
 Result processItem(Data *data, Item item);
 void fixCorners(Data *data);
 
@@ -248,13 +250,13 @@ void generateGcode(EdgeList *edgeList)
       fprintf(fp, "G1 Z0\n");
     }
 
-    fprintf(fp, "G1 X%d Y%d\n", current.fromCorner.x, current.fromCorner.y);
-    fprintf(fp, "G1 X%d Y%d\n", current.toCorner.x, current.toCorner.y);
+    fprintf(fp, "G1 X%d Y%d\n", current.fromCorner.x * DISTANCE_UNIT, current.fromCorner.y * DISTANCE_UNIT);
+    fprintf(fp, "G1 X%d Y%d\n", current.toCorner.x * DISTANCE_UNIT, current.toCorner.y * DISTANCE_UNIT);
 
     if (i < edgeList->numEdges - 1 && (current.toCorner.x != edgeList->edgeList[i + 1].fromCorner.x || current.toCorner.y != edgeList->edgeList[i + 1].fromCorner.y))
     {
       // end writing mode by increasing z (aka. pen up)
-      fprintf(fp, "G1 Z1\n");
+      fprintf(fp, "G1 Z%d\n", DISTANCE_UNIT);
     }
   }
 }
